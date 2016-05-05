@@ -126,7 +126,7 @@ class SCMTileRunner(TileRunner):
         """
         run_directory = self.create_run_directory()
         self.link_template(run_directory)
-        self._write_scm_input(cell, run_directory)
+        self.write_scm_input(cell, run_directory)
         return run_directory
 
     def run_openifs_scm(self, run_directory):
@@ -185,7 +185,7 @@ class SCMTileRunner(TileRunner):
             archived.append(target)
         return archived
 
-    def _write_scm_input(self, cell, run_directory):
+    def write_scm_input(self, cell, run_directory):
         """
         Write the input file for an OpenIFS SCM model run in the run
         directory.
