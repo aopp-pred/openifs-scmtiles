@@ -21,7 +21,7 @@ import shutil
 import subprocess
 
 import numpy as np
-import xray as xr
+import xarray as xr
 
 from scmtiles.exceptions import TileRunError
 from scmtiles.runner import CellResult, TileResult, TileRunner
