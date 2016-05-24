@@ -231,9 +231,22 @@ class SCMTileRunner(TileRunner):
 
         """
         command = shlex.split('./master1c.exe')
-        command_result = subprocess.run(command, cwd=run_directory,
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE)
+        try:
+            command_result = subprocess.run(command, cwd=run_directory,
+                                            stdout=subprocess.PIPE,
+                                            stderr=subprocess.PIPE)
+        except FileNotFoundError:
+            msg = ('Cannot locate executable master1c.exe in the template '
+                   'directory: {}')
+            raise SCMError(msg.format(self.config.template_directory))
+        except OSError:
+            msg = ('Failed to run the executable master1c.exe, check the '
+                   'program to ensure it is working')
+            raise SCMError(msg)
+        except PermissionError:
+            msg = ('Cannot execute the master1c.exe program, check the file '
+                   'has the exectuable bit set in: {}')
+            raise SCMError(msg.format(self.config.template_directory))
         if not self.delete_run_directories:
             # If run directories are persistent then we should retain stdout
             # and stderr for debugging.
