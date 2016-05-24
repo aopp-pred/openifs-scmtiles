@@ -197,13 +197,17 @@ class SCMTileRunner(TileRunner):
         archive_files = ('diagvar.nc', 'diagvar2.nc', 'progvar.nc')
         date_id = self.config.start_time.strftime('%Y%m%d_%H%M%S')
         cell_id = 'y{:04d}x{:04d}'.format(cell.y_global, cell.x_global)
+        archive_directory = pjoin(self.config.output_directory,
+                                  '{}.{}'.format(date_id, cell_id))
+        try:
+            os.makedirs(archive_directory)
+        except PermissionError:
+            msg = 'Cannot create archive directory: {}'
+            raise SCMError(msg.format(archive_directory))
         archived = []
         for af in archive_files:
             source = pjoin(run_directory, af)
-            af_name, af_ext = os.path.splitext(af)
-            target_name = '{}.{}.{}{}'.format(af_name, date_id,
-                                              cell_id, af_ext)
-            target = pjoin(self.config.output_directory, target_name)
+            target = pjoin(archive_directory, af)
             try:
                 shutil.move(source, target)
             except PermissionError:
