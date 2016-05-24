@@ -266,14 +266,14 @@ class SCMTileRunner(TileRunner):
             msg = ('Cannot locate executable master1c.exe in the template '
                    'directory: {}')
             raise SCMError(msg.format(self.config.template_directory))
-        except OSError:
-            msg = ('Failed to run the executable master1c.exe, check the '
-                   'program to ensure it is working')
-            raise SCMError(msg)
         except PermissionError:
             msg = ('Cannot execute the master1c.exe program, check the file '
                    'has the exectuable bit set in: {}')
             raise SCMError(msg.format(self.config.template_directory))
+        except OSError:
+            msg = ('Failed to run the executable master1c.exe, check the '
+                   'program to ensure it is working')
+            raise SCMError(msg)
         return command_result
 
     def _check_for_run_failures(self, run_directory):
