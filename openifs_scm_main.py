@@ -28,12 +28,13 @@ from openifs_scm import SCMTileRunner
 
 
 # Keyword arguments for the SCMTileRunner class:
-_OPENIFS_RUN_CONFIG = {'delete_run_directories': True}
+OPENIFS_RUN_CONFIG = {'archive_failed_runs': True}
 
 
 def main():
     """Program entry point, creates MPI tasks and runs them."""
-    task = TileTask(SCMTileRunner, runner_kwargs=_OPENIFS_RUN_CONFIG,
+    task = TileTask(SCMTileRunner,
+                    runner_kwargs=OPENIFS_RUN_CONFIG,
                     decompose_mode='cells')
     task.initialize()
     task.run()

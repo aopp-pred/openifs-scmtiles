@@ -47,7 +47,7 @@ class SCMTileRunner(TileRunner):
     __version__ = '1.0.alpha1'
 
     def __init__(self, config, tile, tile_in_memory=True,
-                 delete_run_directories=True):
+                 archive_failed_runs=False):
         """
         Create a tile runner instance.
 
@@ -67,20 +67,18 @@ class SCMTileRunner(TileRunner):
             data from the file will be read as needed from the file.
             Defaults to `True`.
 
-        * delete_run_directories
-            If `True` then individual run directories will be deleted
-            once their run has been archived. If `False` then the run
-            directories for every cell will be preserved. If run
-            directories are preserved then they will contain two extra
-            files "stdout.txt" and "stderr.txt" which contain the stdout
-            and stderr from the model run respectively. Default is
-            `True` (delete run directories).
+        * archive_failed_runs
+            If `False` then the run directories of runs that fail will
+            be deleted. If `True` then any run that failes will have its
+            entire run directory archive in the output directory as
+            'failed.YYYYMMDD_HHMMSS.yNNNNxMMMM'. The default is `False`
+            (delete all run directories regardless of run status).
 
         """
         # Initialize the parent class.
         super().__init__(config, tile, tile_in_memory=tile_in_memory)
         # Store extra instance variables.
-        self.delete_run_directories = delete_run_directories
+        self.archive_failed_runs = archive_failed_runs
         # Modify the representation of time for OpenIFS compatibility.
         self._time_to_ifs()
 
@@ -93,18 +91,20 @@ class SCMTileRunner(TileRunner):
             # Build the SCM file structure if a working directory.
             run_directory = self.setup_openifs_scm(cell)
             # Run the SCM.
-            self.run_openifs_scm(run_directory)
+            self.run_openifs_scm(cell, run_directory)
             # Archive the results.
             output_files = self.archive_results(cell, run_directory)
             cell_result = CellResult(cell, output_files)
             logger.info('Run completed successfully for cell: '
                         '{!s}.'.format(cell))
+            run_successful = True
         except (SCMError, TileRunError) as e:
             msg = 'Run failed for cell: {!s} ({!s}).'
             logger.error(msg.format(cell, e))
             cell_result = CellResult(cell, None)
+            run_successful = False
         finally:
-            if self.delete_run_directories:
+            if run_successful or not self.archive_failed_runs:
                 try:
                     shutil.rmtree(run_directory)
                 except UnboundLocalError:
@@ -132,7 +132,7 @@ class SCMTileRunner(TileRunner):
         self.write_scm_input(cell, run_directory)
         return run_directory
 
-    def run_openifs_scm(self, run_directory):
+    def run_openifs_scm(self, cell, run_directory):
         """
         Run the OpenIFS SCM in a directory where it has been set up.
 
@@ -142,11 +142,38 @@ class SCMTileRunner(TileRunner):
             Path to the directory the model should be run in.
 
         """
-        exit_code = self._scm_runner(run_directory)
-        if exit_code != 0:
-            msg = 'SCM exited with non-zero status [{}].'
-            raise SCMError(msg.format(exit_code))
-        self._check_for_run_failures(run_directory)
+        try:
+            command_result = self._scm_runner(run_directory)
+            if command_result.returncode != 0:
+                msg = 'SCM exited with non-zero status [{}].'
+                raise SCMError(msg.format(exit_code))
+            self._check_for_run_failures(run_directory)
+        except SCMError:
+            if self.archive_failed_runs:
+                try:
+                    # Dump the captured stdout and stderr (if any were
+                    # captured) in the run directory:
+                    with open(pjoin(run_directory, 'stdout.txt'), 'wb') as f:
+                        f.write(command_result.stdout)
+                    with open(pjoin(run_directory, 'stderr.txt'), 'wb') as f:
+                        f.write(command_result.stderr)
+                except UnboundLocalError:
+                    # This will happen when command_result wasn't set due to
+                    # an exception, in which case there is no stdout or stderr
+                    # to write.
+                    pass
+                # Copy the whole run directory to the output directory:
+                date_id = self.config.start_time.strftime('%Y%m%d_%H%M%S')
+                cell_id = 'y{:04d}x{:04d}'.format(cell.y_global, cell.x_global)
+                archive_name = 'failed.{}.{}'.format(date_id, cell_id)
+                archive_directory = pjoin(self.config.output_directory,
+                                          archive_name)
+                try:
+                    shutil.move(run_directory, archive_directory)
+                except (PermissionError, FileNotFoundError):
+                    pass
+            # Re-raise the original exception.
+            raise
 
     def archive_results(self, cell, run_directory):
         """
@@ -247,15 +274,7 @@ class SCMTileRunner(TileRunner):
             msg = ('Cannot execute the master1c.exe program, check the file '
                    'has the exectuable bit set in: {}')
             raise SCMError(msg.format(self.config.template_directory))
-        if not self.delete_run_directories:
-            # If run directories are persistent then we should retain stdout
-            # and stderr for debugging.
-            with open(pjoin(run_directory, 'stdout.txt'), 'wb') as f:
-                f.write(command_result.stdout)
-            with open(pjoin(run_directory, 'stderr.txt'), 'wb') as f:
-                f.write(command_result.stderr)
-        status = command_result.returncode
-        return status
+        return command_result
 
     def _check_for_run_failures(self, run_directory):
         """
