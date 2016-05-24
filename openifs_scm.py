@@ -44,6 +44,8 @@ class SCMError(TileRunError):
 class SCMTileRunner(TileRunner):
     """Object in charge of running the SCM over a tile in serial."""
 
+    __version__ = '1.0.alpha1'
+
     def __init__(self, config, tile, tile_in_memory=True,
                  delete_run_directories=True):
         """
@@ -95,10 +97,11 @@ class SCMTileRunner(TileRunner):
             # Archive the results.
             output_files = self.archive_results(cell, run_directory)
             cell_result = CellResult(cell, output_files)
-            logger('Run completed successfully for cell {!s}.'.format(cell))
+            logger.info('Run completed successfully for cell: '
+                        '{!s}.'.format(cell))
         except (SCMError, TileRunError) as e:
-            msg = 'Error: run failed for cell {!s} ({!s}).'
-            logger(msg.format(cell, e))
+            msg = 'Run failed for cell: {!s} ({!s}).'
+            logger.error(msg.format(cell, e))
             cell_result = CellResult(cell, None)
         finally:
             if self.delete_run_directories:
