@@ -238,7 +238,7 @@ class SCMTileRunner(TileRunner):
         scm_input_file_path = pjoin(run_directory, 'scm_in.nc')
         cell_ds = self.get_cell(cell)
         cell_ds['time'].encoding = {'units': 'seconds'}
-        cell_ds.to_netcdf(scm_input_file_path)
+        cell_ds.to_netcdf(scm_input_file_path, format='NETCDF3_CLASSIC')
         return scm_input_file_path
 
     def _scm_runner(self, run_directory):
