@@ -265,7 +265,14 @@ def post_process(config_file_path, num_processes, delete_cell_files=False):
     base_time = np.datetime64('{}+0000'.format(start_time))  # UTC
     time_unit = 'seconds since {}'.format(start_time)
     dataset.coords['time'].values = dataset.coords['time'].values + base_time
-    dataset.coords['time'].encoding = {'units': time_unit}
+    dataset.coords['time'].encoding = {'units': time_unit, 'dtype': 'int32'}
+    # Set the encoding for each variable so we use compression and shuffle
+    # when saving to netCDF format, level 1 compression with a shuffle filter
+    # have been experimentally determined to be a balanced choice between file
+    # size and performance:
+    encoding = {'zlib': True, 'complevel': 1, 'shuffle': True}
+    for var_name in dataset.variables.keys():
+        dataset[var_name].encoding.update(encoding)
     # We want to serialize using a conventional coordinate order of time first,
     # level second, and grid dimensions last in the order latitude then
     # longitude. This ordering can be supplied to the dataset transpose method.
