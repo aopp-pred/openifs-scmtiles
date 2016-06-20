@@ -298,7 +298,6 @@ def post_process(config_file_path, num_processes, delete_cell_files=False):
         for dlist in (dl for _, dl in results):
             for dp in dlist:
                 shutil.rmtree(dp)
-                logger.info('deleted: {!s}'.format(dp))
 
 
 def main(argv=None):
@@ -331,7 +330,7 @@ def main(argv=None):
         post_process(argns.config_file_path, argns.num_processes,
                      delete_cell_files=argns.delete)
     except Error as e:
-        logger.error('error: {!s}'.format(e))
+        logger.error('{!s}'.format(e))
         return 1
     else:
         return 0
