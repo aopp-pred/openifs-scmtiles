@@ -287,7 +287,12 @@ def post_process(config_file_path, num_processes, delete_cell_files=False):
                          config.xname)
     # Write the output to a netcdf file.
     output_filename = 'scm_out.{}.nc'.format(timestamp)
-    output_filepath = os.path.join(config.output_directory, output_filename)
+    try:
+        os.makedirs(config.archive_directory, exist_ok=True)
+    except (PermissionError, OSError):
+        msg = 'cannot create archive directory: {!s}'
+        raise Error(msg.format(config.archive_directory))
+    output_filepath = os.path.join(config.archive_directory, output_filename)
     logger.info('writing combined output file: {!s}'.format(output_filepath))
     try:
         dataset.transpose(*transposed_coords).to_netcdf(output_filepath)
