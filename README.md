@@ -6,15 +6,10 @@ model over a rectangular region.
 
 ## Typical deployment
 
-Download the scmtiles bootstrap script, you'll need to know your Gitlab
-private token (found in settings under account), and you'll probably want to
-turn off shell history before typing it into your shell for security reasons.
-In bash this can be done with `set +o history` (in tcsh try
-`set HISTFILE=/dev/null`):
+Download the scmtiles bootstrap script:
 
     cd /path/to/my/storage
-    set +o history
-    curl -o bootstrap_scmtiles.py https://gitlab.physics.ox.ac.uk/dawson/scmtiles/raw/master/bootstrap_scmtiles.py?private_token=your-private-token
+    curl -o bootstrap_scmtiles.py https://raw.githubusercontent.com/aopp-pred/scmtiles/master/bootstrap_scmtiles.py
 
 Next run the bootstrap script, specifying a directory you'd like the scmtiles
 environment to be installed into. This directory can be anything you like,
@@ -26,15 +21,15 @@ Once scmtiles is installed you can enter the scmtiles directory and proceed to
 clone the openifs-scmtiles repository:
 
     cd scmtiles_expdir/
-    git clone git@gitlab.physics.ox.ac.uk:dawson/openifs-scmtiles.git cascade
+    git clone https://github.com/aopp-pred/openifs-scmtiles.git cascade
 
-I've chosen to clone the repository into a directory named `cascade/` as the
-experiment I'll be setting up is related to CASCADE project data.
+I've chosen to clone the repository into a directory named `cg-cascade/` as the
+experiment I'll be setting up is related to a project named cg-cascade.
 
-I can now enter the `cascade/` directory and set up the run. I'll make a copy
+I can now enter the `cg-cascade/` directory and set up the run. I'll make a copy
 of the template run configuration file and adjust it to my own needs:
 
-    cd cascade/
+    cd cg-cascade/
     cp run.cfg.template run.exp01.cfg
 
 It is recommended to create one configuration file per experiment rather than
