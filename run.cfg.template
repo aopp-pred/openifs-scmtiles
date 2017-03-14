@@ -1,11 +1,6 @@
-# Template configuration file for scmtiles.
-#
-# Usage:
-#   Copy this file to a new name (any name you like) and fill in each
-#   variable with a value appropriate for your experiment and the machine
-#   you are running it on. It is recommended to create one file per
-#   experiement and one file per machine the experiment runs on. This helps
-#   with future project audits and reproduction.
+# Template configuration file for scmtiles experiments in cg-cascade run
+# on the JASMIN platform. Copy to template.cfg and replace cgXX with your
+# experiment identifier.
 #
 [default]
 
@@ -15,14 +10,14 @@
 #   - Must be able to be parsed by `dateutil.parser.parse`, but usually would
 #     be an ISO 8601 compatible form including the full date and time.
 #
-start_time = 2009-04-06T01:15:00
+start_time = _STARTTIME_
 
 # The number of seconds between forcing steps.
 forcing_step_seconds = 900
 
 # The number of forcing steps required to run the model to completion
 # (including the initial condition).
-forcing_num_steps = 4
+forcing_num_steps = 5
 
 # Name of the x-coordinate in the input netcdf file.
 xname = lon
@@ -41,7 +36,7 @@ ysize = 142
 # Conditions:
 #   - Must be accessible from all worker machines.
 #
-input_directory = /group_workspaces/jasmin2/aopp/scm_cg/scm_test_inputs
+input_directory = /group_workspaces/jasmin2/aopp/cg-cascade/cgXX/data/scm_in
 
 # The name of the input file for forcing input step.
 #
@@ -59,7 +54,7 @@ input_file_pattern = scm_in.{time.year:04d}{time.month:02d}{time.day:02d}{time.h
 #   - Must exist on all worker machines (and usually would be identical on
 #     all machines e.g., on a shared mount point).
 #
-output_directory = /work/scratch/scm_cg/test64/%(start_time)s
+output_directory = /work/scratch/cg-cascade/cgXX/%(start_time)s
 
 # A directory where each worker will create temporary directories for model
 # runs and logging.
@@ -74,4 +69,11 @@ work_directory = /tmp
 # Conditions:
 #   - Must be accessible from all worker machines.
 #
-template_directory = /group_workspaces/jasmin2/aopp/scm_cg/run_template
+template_directory = /group_workspaces/jasmin2/aopp/cg-cascade/cgXX/static/run_template
+
+# The archive directory for final post-processed output.
+#
+# Conditions:
+#   - None
+#
+archive_directory = /group_workspaces/jasmin2/aopp/cg-cascade/cgXX/data/scm_out
