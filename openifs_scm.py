@@ -146,7 +146,7 @@ class SCMTileRunner(TileRunner):
             command_result = self._scm_runner(run_directory)
             if command_result.returncode != 0:
                 msg = 'SCM exited with non-zero status [{}].'
-                raise SCMError(msg.format(exit_code))
+                raise SCMError(msg.format(command_result.returncode))
             self._check_for_run_failures(run_directory)
         except SCMError:
             if self.archive_failed_runs:
