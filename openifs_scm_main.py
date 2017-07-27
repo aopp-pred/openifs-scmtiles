@@ -28,7 +28,10 @@ from openifs_scm import SCMTileRunner
 
 
 # Keyword arguments for the SCMTileRunner class:
-OPENIFS_RUN_CONFIG = {'archive_failed_runs': True}
+OPENIFS_RUN_CONFIG = {
+    'archive_failed_runs': True,
+    'tile_in_memory': False,
+}
 
 
 def main():
