@@ -72,7 +72,7 @@ def load_coordinate_templates(config):
     **Returns:**
 
     * coord_dict
-        A mapping from coordinate name to xarray Coordinate objects.
+        A mapping from coordinate name to xarray IndexVariable objects.
 
     """
     filename = config.input_file_pattern.format(time=config.start_time)
