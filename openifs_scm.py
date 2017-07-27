@@ -331,13 +331,13 @@ class SCMTileRunner(TileRunner):
         # Create the 'date' coordinate containing the date component of the
         # reference time.
         date_values = [int(reference_date.strftime('%Y%m%d'))] * number_times
-        date_coord = xr.Coordinate('date', date_values)
+        date_coord = xr.IndexVariable('date', date_values)
         # Create the 'second' coordinate containing the seconds component of
         # the reference time.
         second_values = np.array(
             [(reference_time - reference_date).seconds] * number_times,
             dtype='<m8[s]')
-        second_coord = xr.Coordinate('second', second_values)
+        second_coord = xr.IndexVariable('second', second_values)
         # Create the new 'time' coordinate containing the number of seconds
         # from the reference time. The times are first rounded to the
         # nearest second since OpenIFS cannot handle fractional seconds.
@@ -346,7 +346,7 @@ class SCMTileRunner(TileRunner):
         time_rounded = np.round(time_int / 1.e9)
         time_rs = time_rounded.astype('datetime64[s]')
         time_values = time_rs - time_rs[0]
-        time_coord = xr.Coordinate('time', time_values)
+        time_coord = xr.IndexVariable('time', time_values)
         # Update the dataset with the new coordinates.
         self.tile_ds.coords.update({'time': time_coord,
                                     'date': ('time', date_coord),
