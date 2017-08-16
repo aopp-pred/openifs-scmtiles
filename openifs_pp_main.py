@@ -201,7 +201,8 @@ def pp_tile(config, timestamp, coordinate_templates, drop_list, tile):
     return tile_ds, filepaths
 
 
-def post_process(config_file_path, num_processes, delete_cell_files=False):
+def post_process(config_file_path, num_processes, delete_cell_files=False,
+                 bulk_mode=False):
     """
     Post-process an SCMTiles model run by combining individual cell output
     files into a single file for the whole grid.
@@ -227,16 +228,22 @@ def post_process(config_file_path, num_processes, delete_cell_files=False):
         `False` then the individual cell files will remain after processing.
         The default is `False` (no files deleted).
 
+    * bulk_mode
+        If `True` the post-processing will be done in a single chunk, reading
+        all files at the same time. The default is `False` in which case the
+        post-processing is done one grid row at a time. Bulk mode requires
+        only 1 process, and an error will be raised if bulk mode is used with
+        more than 1 process.
+
     """
     if num_processes < 1:
-        raise Error('number of processes must be positive')
+        raise Error('number of processes must be >= 1')
+    if bulk_mode and num_processes != 1:
+        raise Error('bulk mode only works with a single process')
     try:
         config = SCMTilesConfig.from_file(config_file_path)
     except ConfigurationError as e:
         raise Error(e)
-    tiles = GridManager(config.xsize,
-                        config.ysize,
-                        config.ysize).decompose_by_rows()
     # Compute static data:
     logger = logging.getLogger('PP')
     logger.info('loading coordinate templates')
@@ -250,16 +257,31 @@ def post_process(config_file_path, num_processes, delete_cell_files=False):
         # If the file doesn't exist or we can't read it then we don't care,
         # we just won't drop any variables in post-processing.
         drop_list = []
-    process_pool = Pool(num_processes)
-    logger.info('dispatching tiles to {} workers'.format(num_processes))
-    results = process_pool.map(
-        partial(pp_tile, config, timestamp, coordinate_templates, drop_list),
-        tiles)
-    # The final dataset is formed by concatenating all the tiles along the
-    # y-grid axis.
-    dataset = xr.concat(sorted([ds for ds, _ in results],
-                               key=lambda ds: ds[config.yname].values.max()),
-                        dim=config.yname)
+    if bulk_mode:
+        # In bulk mode we just load everything at once.
+        tile = GridManager(config.xsize,
+                           config.ysize,
+                           1).decompose_by_rows()[0]
+        logger.info('processing all data in bulk mode (serial)')
+        dataset, filepaths = pp_tile(config, timestamp, coordinate_templates,
+                                     drop_list, tile)
+    else:
+        # In normal mode we load one row at a time.
+        tiles = GridManager(config.xsize,
+                            config.ysize,
+                            config.ysize).decompose_by_rows()
+        process_pool = Pool(num_processes)
+        logger.info('dispatching tiles to {} workers'.format(num_processes))
+        results = process_pool.map(
+            partial(pp_tile, config, timestamp, coordinate_templates, drop_list),
+            tiles
+        )
+        # The final dataset is formed by concatenating all the tiles along the
+        # y-grid axis.
+        dataset = xr.concat(sorted([ds for ds, _ in results],
+                                   key=lambda ds: ds[config.yname].values.max()),
+                            dim=config.yname)
+        filepaths = [fp for _, fplist in results for fp in fplist]
     # Ensure the time dimension has with CF compliant units:
     start_time = config.start_time.strftime('%FT%T')
     base_time = np.datetime64('{}+0000'.format(start_time))  # UTC
@@ -300,9 +322,8 @@ def post_process(config_file_path, num_processes, delete_cell_files=False):
         Error('failed write grid to disk: {!s}'.format(e))
     if delete_cell_files:
         logger.info('deleting individual column files')
-        for dlist in (dl for _, dl in results):
-            for dp in dlist:
-                shutil.rmtree(dp)
+        for dp in filepaths:
+            shutil.rmtree(dp)
 
 
 def main(argv=None):
@@ -314,6 +335,8 @@ def main(argv=None):
                     help="Number of processes to use.")
     ap.add_argument('-d', '--delete', action='store_true', default=False,
                     help='delete input column files after processing')
+    ap.add_argument('-b', '--bulk-mode', action='store_true', default=False,
+                    help='post-process in bulk mode (danger: high memory usage)')
     ap.add_argument('config_file_path', type=str,
                     help='path to the program configuration file')
     # Parse the given arguments, this will handle errors gracefully and print
@@ -333,7 +356,7 @@ def main(argv=None):
         logger.info('Running {} at version {}'.format(argv[0], __version__))
         logger.info('Backend scmtiles is version {}'.format(scmtiles_version))
         post_process(argns.config_file_path, argns.num_processes,
-                     delete_cell_files=argns.delete)
+                     delete_cell_files=argns.delete, bulk_mode=argns.bulk_mode)
     except Error as e:
         logger.error('{!s}'.format(e))
         return 1
