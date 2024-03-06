@@ -9,13 +9,13 @@ model over a rectangular region.
 Download the scmtiles bootstrap script:
 
     cd /path/to/my/storage
-    curl -o bootstrap_scmtiles.py https://raw.githubusercontent.com/aopp-pred/scmtiles/master/bootstrap_scmtiles.py
+    curl -o bootstrap_scmtiles.sh https://raw.githubusercontent.com/aopp-pred/scmtiles/master/bootstrap_scmtiles.sh
 
 Next run the bootstrap script, specifying a directory you'd like the scmtiles
 environment to be installed into. This directory can be anything you like,
 here I'm using `scmtiles_expdir/` as an example:
 
-    python bootstrap_scmtiles.py scmtiles_expdir
+    bash bootstrap_scmtiles.sh scmtiles_expdir
 
 Once scmtiles is installed you can enter the scmtiles directory and proceed to
 clone the openifs-scmtiles repository:
